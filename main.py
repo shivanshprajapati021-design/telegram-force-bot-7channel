@@ -6,16 +6,17 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-print(f"TOKEN: {'FOUND' if BOT_TOKEN else 'NOT FOUND'}")
 
 app_flask = Flask(__name__)
+
 @app_flask.route('/')
-def home(): return "BOT LIVE - 7 CHANNEL"
+def home():
+    return "BOT LIVE"
 
 def run_flask():
-    app_flask.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+    port = int(os.environ.get("PORT", 10000))
+    app_flask.run(host='0.0.0.0', port=port)
 
-# TUMHARI 7 LINKS
 C1 = "https://t.me/+j88DIVGmn2E5NzU1"
 C2 = "https://t.me/+rFqJBCyqFPZlN2Q1"
 C3 = "https://t.me/+cAyt8cSc44w4NjJl"
@@ -32,11 +33,32 @@ def keyboard():
         [InlineKeyboardButton("SLOT 3", url=C3), InlineKeyboardButton("SLOT 4", url=C4)],
         [InlineKeyboardButton("SLOT 5", url=C5), InlineKeyboardButton("SLOT 6", url=C6)],
         [InlineKeyboardButton("SLOT 7", url=C7)],
-        [InlineKeyboardButton("GET KEY 🔑", url=GET_KEY)],
-        [InlineKeyboardButton("VERIFY ✅", callback_data="verify")]
+        [InlineKeyboardButton("GET KEY", url=GET_KEY)],
+        [InlineKeyboardButton("VERIFY", callback_data="verify")]
     ])
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "👋 WELCOME\n\n"
-        "🔒 GET
+    msg = "WELCOME\n\nJoin all 7 channels to get key\n\nGET KEY link: " + GET_KEY
+    await update.message.reply_text(msg, reply_markup=keyboard())
+
+async def verify_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.answer()
+    await update.callback_query.message.reply_text(
+        "Verified! Get key here:",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("VERIFY GET KEY", url=VERIFY)]])
+    )
+
+def main():
+    threading.Thread(target=run_flask, daemon=True).start()
+    if not BOT_TOKEN:
+        print("NO TOKEN")
+        while True:
+            time.sleep(1000)
+    app = Application.builder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(verify_cb, pattern="verify"))
+    print("Bot Started...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
